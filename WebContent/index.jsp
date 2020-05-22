@@ -10,6 +10,8 @@
 <script src="js/jquery-3.4.1.min.js"></script>
 <script src="js/bootstrap.js"></script>
 <script>
+	var lastID = 0;
+	
 	function submitFunction(){
 		var chatName = $("#chatName").val();
 		var chatContent = $("#chatContent").val();
@@ -17,8 +19,8 @@
 			type : "POST",
 			url : "./chatSubmitServlet",
 			data : {
-				chatName: chatName,
-				chatContent: chatContent
+				chatName: encodeURIComponent(chatName),
+				chatContent: encodeURIComponent(chatContent)
 			},
 			success : function(result){
 				if(result == 1){
@@ -47,34 +49,41 @@
 				listType: type,
 			},
 			success : function(data){
+				if(data == "") return;
 				var parsed = JSON.parse(data);
 				var result = parsed.result;
 				for(var i = 0; i<result.length; i++){
 					addChat(result[i][0].value, result[i][1].value, result[i][2].value);
 				}
+				lastID = Number(parsed.last);
 			}
 		});
-		
-		function addChat(chatName, chatContent, chatTime){
-			$('#chatList').append(
-				'<div class="row">' +
-					'<div class="col-lg-12">' +
-						'<div class="media">' +
-							'<a href="#" class="pull-left">' +
-								'<img class="media-object img-circle" src="images/icon32.png" />' +
-							'</a>' +
-							'<div class="media-body">' +
-								'<h4 class="media-heading">' +
-									chatName + '<span class="small pull-right">' + chatTime + '</span>' +
-								'</h4>' +
-								'<p>' + chatContent + '</p>' +
-							'</div>' +
+	}	
+	function addChat(chatName, chatContent, chatTime){
+		$('#chatList').append(
+			'<div class="row">' +
+				'<div class="col-lg-12">' +
+					'<div class="media">' +
+						'<a href="#" class="pull-left">' +
+							'<img class="media-object img-circle" src="images/icon32.png" />' +
+						'</a>' +
+						'<div class="media-body">' +
+							'<h4 class="media-heading">' +
+								chatName + '<span class="small pull-right">' + chatTime + '</span>' +
+							'</h4>' +
+							'<p>' + chatContent + '</p>' +
 						'</div>' +
 					'</div>' +
-				'</div>' + 
-				'<hr />'
-			);
-		}
+				'</div>' +
+			'</div>' + 
+			'<hr />'
+		);
+		$('#chatList').scrollTop($('#chatList')[0].scrollHeight);
+	}
+	function getInfiniteChat(){
+		setInterval(function(){
+			chatListFunction(lastID); 
+		},1000);
 	}
 </script>
 </head>
@@ -93,7 +102,7 @@
 							<div class="clearfix"></div>
 						</div>
 						<div id="chat" class="panel-collapse collapse in">
-							<div id="chatList" class="portlet-body chat-widget" style="overflow-y: auto; width: auto; height: 300px;"></div>
+							<div id="chatList" class="portlet-body chat-widget" style="overflow-y: auto; width: auto; height: 500px;"></div>
 							<div class="portlet-footer">
 								<div class="row">
 									<div class="form-group col-xs-4">
@@ -127,6 +136,11 @@
 			</div>
 		</div>
 	</div>
-	<button type="button" class="btn btn-default pull-right" onclick="chatListFunction('ten')">추가</button>
+	<script>
+		$(document).ready(function(){
+			chatListFunction('ten');
+			getInfiniteChat();
+		});
+	</script>
 </body>
 </html>

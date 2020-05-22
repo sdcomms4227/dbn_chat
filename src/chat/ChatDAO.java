@@ -62,15 +62,54 @@ public class ChatDAO {
 		return chatList;
 	}//getChatList()
 
-	//메시지 가져오기
+	//최근 메시지 가져오기 - number
 	public ArrayList<Chat> getChatListByRecent(int number){
 		ArrayList<Chat> chatList = null;
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
-		String sql = "select * from chat where chatID > (select max(chatID) - ? form chat) order by chatTime";
+		String sql = "select * from chat where chatID > (select max(chatID) - ? from chat) order by chatTime";
 		try {
 			pstmt = conn.prepareStatement(sql);
 			pstmt.setInt(1, number);
+			rs = pstmt.executeQuery();
+			chatList = new ArrayList<Chat>();
+			while(rs.next()) {
+				Chat chat = new Chat();
+				chat.setChatID(rs.getInt("chatID"));
+				chat.setChatName(rs.getString("chatName"));
+				chat.setChatContent(rs.getString("chatContent").replaceAll(" ","&nbsp;").replaceAll("<", "&lt;").replaceAll(">","&gt;").replaceAll("\n", "<br>"));
+				int chatTime = Integer.parseInt(rs.getString("chatTime").substring(11,13));
+				String timeType = "오전";
+				if(Integer.parseInt(rs.getString("chatTime").substring(11,13)) >= 12){
+					timeType = "오후";
+					chatTime -= 12;
+				}
+				chat.setChatTime(rs.getString("chatTime").substring(0,11) + " " + timeType + " " + chatTime + ":" + rs.getString("chatTime").substring(14,16) + "");
+				chatList.add(chat);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if(rs!=null) rs.close();
+				if(pstmt!=null) pstmt.close();
+				if(conn!=null) conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}	
+		}
+		return chatList;
+	}//getChatListByRecent()
+
+	//최근 메시지 가져오기 - chatID
+	public ArrayList<Chat> getChatListByRecent(String chatID){
+		ArrayList<Chat> chatList = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		String sql = "select * from chat where chatID > ? order by chatTime";
+		try {
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setInt(1, Integer.parseInt(chatID));
 			rs = pstmt.executeQuery();
 			chatList = new ArrayList<Chat>();
 			while(rs.next()) {
